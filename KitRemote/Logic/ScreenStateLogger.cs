@@ -5,123 +5,189 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using Resource = SharpDX.Direct3D11.Resource;
 
-public class ScreenStateLogger
+public class ScreenStateLogger: IDisposable
 {
     private byte[] _previousScreen;
     private int _fps;
     private DateTime _startRecordingTime;
 
     private bool _run, _init;
-    public int Size { get; private set; }
+    private int _adapterIndex = 0, _outputIndex = 0;
 
+    private Factory1 _factory;
+    private Adapter1? _adapter;
+    private SharpDX.Direct3D11.Device? _device;
+    private Output? _output;
+    private Output1? _output1;
+    private Texture2DDescription? _textureDesc;
+    private Texture2D? _screenTexture;
 
-    public ScreenStateLogger()
+    private int _width, _height;
+
+    public ScreenStateLogger(int adapter = 0, int output = 0)
     {
+        _adapterIndex = adapter;
+        _outputIndex = output;
+
+        Init();
     }
 
-    public void Start()
+	public void Init()
     {
-        _run = true;
-        _startRecordingTime = DateTime.Now;
-        _fps = 0;
-
-        var factory = new Factory1();
-        //Get first adapter
-        var adapter = factory.GetAdapter1(0);
-        //Get device from adapter
-        var device = new SharpDX.Direct3D11.Device(adapter);
-        //Get front buffer of the adapter
-        var output = adapter.GetOutput(0);
-        var output1 = output.QueryInterface<Output1>();
-        // Width/Height of desktop to capture
-        int width = output.Description.DesktopBounds.Right;
-        int height = output.Description.DesktopBounds.Bottom;
-        // Create Staging texture CPU-accessible
-        var textureDesc = new Texture2DDescription
-        {
+	    _factory = new Factory1();
+		
+	    _adapter = _factory.GetAdapter1(_adapterIndex);
+		_device = new SharpDX.Direct3D11.Device(_adapter);
+	    _output = _adapter.GetOutput(_outputIndex);
+	    _output1 = _output.QueryInterface<Output1>();
+	    
+	    _width = _output.Description.DesktopBounds.Right - _output.Description.DesktopBounds.Left;
+	    _height = _output.Description.DesktopBounds.Bottom - _output.Description.DesktopBounds.Top;
+	    
+	    _textureDesc = new Texture2DDescription
+	    {
             CpuAccessFlags = CpuAccessFlags.Read,
             BindFlags = BindFlags.None,
             Format = Format.B8G8R8A8_UNorm,
-            Width = width,
-            Height = height,
+            Width = _width,
+            Height = _height,
             OptionFlags = ResourceOptionFlags.None,
             MipLevels = 1,
             ArraySize = 1,
             SampleDescription = { Count = 1, Quality = 0 },
             Usage = ResourceUsage.Staging
         };
-        var screenTexture = new Texture2D(device, textureDesc);
-        Task.Factory.StartNew(() =>
-        {
-            // Duplicate the output
-            using var duplicatedOutput = output1.DuplicateOutput(device);
+	    _screenTexture = new Texture2D(_device, _textureDesc.Value);
+	}
 
-            while (_run)
-            {
-                try
-                {
-                    SharpDX.DXGI.Resource screenResource;
-                    OutputDuplicateFrameInformation duplicateFrameInformation;
-                    // Try to get duplicated frame within given time is ms
-                    var result = duplicatedOutput.TryAcquireNextFrame(5, out duplicateFrameInformation, out screenResource);
+	public void SetAdapter(int index)
+	{
+        _adapterIndex = index;
+        _outputIndex = 0;
 
-                    if (result.Failure)
-                    {
-                        continue;
-                    }
-                    // copy resource into memory that can be accessed by the CPU
-                    using (var screenTexture2D = screenResource.QueryInterface<Resource>())
-                        device.ImmediateContext.CopyResource(screenTexture2D, screenTexture);
-                    // Get the desktop capture texture
-                    var mapSource = device.ImmediateContext.MapSubresource(screenTexture, 0, MapMode.Read, SharpDX.Direct3D11.MapFlags.None);
-                    // Create Drawing.Bitmap
-                    using (var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))
-                    {
-                        var boundsRect = new Rectangle(0, 0, width, height);
-                        // Copy pixels from screen capture Texture to GDI bitmap
-                        var mapDest = bitmap.LockBits(boundsRect, ImageLockMode.WriteOnly, bitmap.PixelFormat);
-                        var sourcePtr = mapSource.DataPointer;
-                        var destPtr = mapDest.Scan0;
-                        for (int y = 0; y < height; y++)
-                        {
-                            // Copy a single line 
-                            Utilities.CopyMemory(destPtr, sourcePtr, width * 4);
-                            // Advance pointers
-                            sourcePtr = IntPtr.Add(sourcePtr, mapSource.RowPitch);
-                            destPtr = IntPtr.Add(destPtr, mapDest.Stride);
-                        }
-                        // Release source and dest locks
-                        bitmap.UnlockBits(mapDest);
-                        device.ImmediateContext.UnmapSubresource(screenTexture, 0);
-                        using (var ms = new MemoryStream())
-                        {
-                            bitmap.Save(ms, ImageFormat.Bmp);
-                            ScreenRefreshed?.Invoke(this, ms.ToArray());
-                            UpdateFps();
-                            _init = true;
-                        }
-                    }
-                    screenResource.Dispose();
-                    duplicatedOutput.ReleaseFrame();
-                }
-                catch (SharpDXException e)
-                {
-                    if (e.ResultCode.Code != SharpDX.DXGI.ResultCode.WaitTimeout.Result.Code)
-                    {
-                        Trace.TraceError(e.Message);
-                        Trace.TraceError(e.StackTrace);
-                    }
-                }
-            }
-        });
-        while (!_init) ;
+        _adapter = _factory.GetAdapter1(_adapterIndex);
+	}
+
+	public void SetOutput(int index)
+	{
+		_outputIndex = index;
+	}
+
+	public List<string> GetAdapters()
+	{
+        return _factory.Adapters.Select(adapter => adapter.Description.Description).ToList();
+	}
+
+	public List<string> GetOutputs()
+	{
+		return _adapter is null ? new List<string>() : _adapter.Outputs.Select(output => output.Description.DeviceName).ToList();
+	}
+
+	public void Start()
+    {
+	    Init();
+		_run = true;
+        _startRecordingTime = DateTime.Now;
+        _fps = 0;
+        var thread = new Thread(DuplicateScreen);
+		thread.Start();
     }
+
+	private void DuplicateScreen()
+	{
+		// Duplicate the output
+		using var duplicatedOutput = _output1.DuplicateOutput(_device);
+
+		while (_run)
+		{
+			try
+			{
+				// Try to get duplicated frame within given time is ms
+				var result = duplicatedOutput.TryAcquireNextFrame(5, out _, out var screenResource);
+
+				if (result.Failure)
+				{
+					continue;
+				}
+				// copy resource into memory that can be accessed by the CPU
+				using (var screenTexture2D = screenResource.QueryInterface<Resource>())
+					_device.ImmediateContext.CopyResource(screenTexture2D, _screenTexture);
+				// Get the desktop capture texture
+				var mapSource = _device.ImmediateContext.MapSubresource(_screenTexture, 0, MapMode.Read, SharpDX.Direct3D11.MapFlags.None);
+				// Create Drawing.Bitmap
+				using (var bitmap = new Bitmap(_width, _height, PixelFormat.Format32bppArgb))
+				{
+					//var bounds = _output.Description.DesktopBounds;
+					//using var graphics = Graphics.FromImage(bitmap);
+					//graphics.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, new Size(_width,_height));
+					//DrawCursor(graphics);
+
+					//using var ms = new MemoryStream();
+					//bitmap.Save(ms, ImageFormat.Bmp);
+					//ScreenRefreshed?.Invoke(this, ms.ToArray());
+					//UpdateFps();
+					//_init = true;
+
+
+					var boundsRect = new Rectangle(0, 0, _width, _height);
+					// Copy pixels from screen capture Texture to GDI bitmap
+					var mapDest = bitmap.LockBits(boundsRect, ImageLockMode.WriteOnly, bitmap.PixelFormat);
+					var sourcePtr = mapSource.DataPointer;
+					var destPtr = mapDest.Scan0;
+					for (int y = 0; y < _height; y++)
+					{
+						// Copy a single line 
+						Utilities.CopyMemory(destPtr, sourcePtr, _width * 4);
+						// Advance pointers
+						sourcePtr = IntPtr.Add(sourcePtr, mapSource.RowPitch);
+						destPtr = IntPtr.Add(destPtr, mapDest.Stride);
+					}
+					// Release source and dest locks
+					bitmap.UnlockBits(mapDest);
+					_device.ImmediateContext.UnmapSubresource(_screenTexture, 0);
+					using (var ms = new MemoryStream())
+					{
+						//using var graphics = Graphics.FromImage(bitmap);
+						//DrawCursor(graphics);
+
+						bitmap.Save(ms, ImageFormat.Bmp);
+						ScreenRefreshed?.Invoke(this, ms.ToArray());
+						UpdateFps();
+						_init = true;
+					}
+				}
+				screenResource.Dispose();
+				duplicatedOutput.ReleaseFrame();
+			}
+			catch (SharpDXException e)
+			{
+				if (e.ResultCode.Code != SharpDX.DXGI.ResultCode.WaitTimeout.Result.Code)
+				{
+					Trace.TraceError(e.Message);
+					Trace.TraceError(e.StackTrace);
+				}
+			}
+		}
+
+		Dispose();
+	}
+
+	private void DrawCursor(Graphics graphics)
+	{
+		if (_output is null)
+		{
+			return;
+		}
+		var cursorPosition = new Point(Cursor.Position.X - _output.Description.DesktopBounds.Left, Cursor.Position.Y - _output.Description.DesktopBounds.Top);
+		Cursors.Default.Draw(graphics, new Rectangle(cursorPosition, Cursors.Default.Size));
+	}
+
     public void Stop()
     {
         _run = false;
-    }
+	}
 
-    private void UpdateFps()
+	private void UpdateFps()
     {
         _fps++;
 
@@ -140,4 +206,16 @@ public class ScreenStateLogger
 
     public delegate void FpsHandler(int fps);
     public event FpsHandler FpsChange;
+
+    public void Dispose()
+    {
+	    _device?.ImmediateContext.UnmapSubresource(_screenTexture, 0);
+
+		_factory.Dispose();
+	    _adapter?.Dispose();
+	    _device?.Dispose();
+	    _output?.Dispose();
+	    _output1?.Dispose();
+	    _screenTexture?.Dispose();
+    }
 }

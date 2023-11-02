@@ -1,104 +1,153 @@
 ﻿namespace KitRemote
 {
-    partial class Form1
-    {
-        /// <summary>
-        ///  Required designer variable.
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
+	partial class Form1
+	{
+		/// <summary>
+		///  Required designer variable.
+		/// </summary>
+		private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        ///  Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+		/// <summary>
+		///  Clean up any resources being used.
+		/// </summary>
+		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && (components != null))
+			{
+				components.Dispose();
+			}
+			base.Dispose(disposing);
+		}
 
-        #region Windows Form Designer generated code
+		#region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
-        private void InitializeComponent()
-        {
-            this.button1 = new System.Windows.Forms.Button();
-            this.button2 = new System.Windows.Forms.Button();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.label1 = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(25, 28);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(94, 29);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(143, 28);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(94, 29);
-            this.button2.TabIndex = 1;
-            this.button2.Text = "button2";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBox1.Location = new System.Drawing.Point(23, 78);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(755, 360);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox1.TabIndex = 2;
-            this.pictureBox1.TabStop = false;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(286, 32);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(50, 20);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "label1";
-            // 
-            // Form1
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.pictureBox1);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.button1);
-            this.Name = "Form1";
-            this.Text = "Form1";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+		/// <summary>
+		///  Required method for Designer support - do not modify
+		///  the contents of this method with the code editor.
+		/// </summary>
+		private void InitializeComponent()
+		{
+			button1 = new Button();
+			button2 = new Button();
+			pictureBox1 = new PictureBox();
+			label1 = new Label();
+			label2 = new Label();
+			label3 = new Label();
+			comboBox1 = new ComboBox();
+			comboBox2 = new ComboBox();
+			((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+			SuspendLayout();
+			// 
+			// button1
+			// 
+			button1.Location = new Point(22, 21);
+			button1.Margin = new Padding(3, 2, 3, 2);
+			button1.Name = "button1";
+			button1.Size = new Size(82, 22);
+			button1.TabIndex = 0;
+			button1.Text = "button1";
+			button1.UseVisualStyleBackColor = true;
+			button1.Click += button1_Click;
+			// 
+			// button2
+			// 
+			button2.Location = new Point(125, 21);
+			button2.Margin = new Padding(3, 2, 3, 2);
+			button2.Name = "button2";
+			button2.Size = new Size(82, 22);
+			button2.TabIndex = 1;
+			button2.Text = "button2";
+			button2.UseVisualStyleBackColor = true;
+			button2.Click += button2_Click;
+			// 
+			// pictureBox1
+			// 
+			pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+			pictureBox1.Location = new Point(20, 58);
+			pictureBox1.Margin = new Padding(3, 2, 3, 2);
+			pictureBox1.Name = "pictureBox1";
+			pictureBox1.Size = new Size(976, 270);
+			pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+			pictureBox1.TabIndex = 2;
+			pictureBox1.TabStop = false;
+			// 
+			// label1
+			// 
+			label1.AutoSize = true;
+			label1.Location = new Point(795, 23);
+			label1.Name = "label1";
+			label1.Size = new Size(38, 15);
+			label1.TabIndex = 3;
+			label1.Text = "label1";
+			// 
+			// label2
+			// 
+			label2.AutoSize = true;
+			label2.Location = new Point(876, 23);
+			label2.Name = "label2";
+			label2.Size = new Size(38, 15);
+			label2.TabIndex = 4;
+			label2.Text = "label2";
+			// 
+			// label3
+			// 
+			label3.AutoSize = true;
+			label3.Location = new Point(936, 23);
+			label3.Name = "label3";
+			label3.Size = new Size(38, 15);
+			label3.TabIndex = 5;
+			label3.Text = "label3";
+			// 
+			// comboBox1
+			// 
+			comboBox1.FormattingEnabled = true;
+			comboBox1.Location = new Point(228, 20);
+			comboBox1.Name = "comboBox1";
+			comboBox1.Size = new Size(180, 23);
+			comboBox1.TabIndex = 6;
+			comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+			// 
+			// comboBox2
+			// 
+			comboBox2.FormattingEnabled = true;
+			comboBox2.Location = new Point(426, 20);
+			comboBox2.Name = "comboBox2";
+			comboBox2.Size = new Size(204, 23);
+			comboBox2.TabIndex = 7;
+			comboBox2.SelectedIndexChanged += comboBox2_SelectedIndexChanged;
+			// 
+			// Form1
+			// 
+			AutoScaleDimensions = new SizeF(7F, 15F);
+			AutoScaleMode = AutoScaleMode.Font;
+			ClientSize = new Size(1015, 338);
+			Controls.Add(comboBox2);
+			Controls.Add(comboBox1);
+			Controls.Add(label3);
+			Controls.Add(label2);
+			Controls.Add(label1);
+			Controls.Add(pictureBox1);
+			Controls.Add(button2);
+			Controls.Add(button1);
+			Margin = new Padding(3, 2, 3, 2);
+			Name = "Form1";
+			Text = "Form1";
+			FormClosing += Form1_FormClosing;
+			((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+			ResumeLayout(false);
+			PerformLayout();
+		}
 
-        }
+		#endregion
 
-        #endregion
-
-        private Button button1;
-        private Button button2;
-        private PictureBox pictureBox1;
-        private Label label1;
-    }
+		private Button button1;
+		private Button button2;
+		private PictureBox pictureBox1;
+		private Label label1;
+		private Label label2;
+		private Label label3;
+		private ComboBox comboBox1;
+		private ComboBox comboBox2;
+	}
 }
